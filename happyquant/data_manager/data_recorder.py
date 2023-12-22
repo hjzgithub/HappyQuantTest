@@ -3,6 +3,7 @@ import os
 class DataRecorder:
     def __init__(self, folder_path):
         os.makedirs(folder_path, exist_ok=True)
+        self.folder_path = folder_path
 
     @staticmethod
     def save_data_by_parquet(data, folder_path, file_name):

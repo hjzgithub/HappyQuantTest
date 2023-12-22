@@ -7,6 +7,8 @@ import os
 import pandas as pd
 from utils.date_tools import get_datetime_by_int
 import joblib
+import tushare as ts
+import yaml
 
 class DataFetcher:
     '''
@@ -19,7 +21,7 @@ class DataFetcher:
                    instrument_type: str,  
                    update_freq: str, 
                    data_type: str, 
-                   contract_type: str,
+                   contract: str,
                    data_freq: str,
                    use_parallel: bool = False,
                    ):
@@ -40,27 +42,39 @@ class DataFetcher:
         if update_freq == 'daily':
             if use_parallel:
                 list_df = joblib.Parallel(n_jobs=-1, backend='loky', verbose=100)( \
-                    joblib.delayed(self.fetch_data_by_date)(date, data_source, instrument_type, update_freq, data_type, contract_type, data_freq)\
+                    joblib.delayed(self.fetch_data_by_date)(date, data_source, instrument_type, update_freq, data_type, contract, data_freq)\
                     for date in pd.date_range(start, end, freq='D').date)
             else:
-                list_df = [self.fetch_data_by_date(date, data_source, instrument_type, update_freq, data_type, contract_type, data_freq)\
+                list_df = [self.fetch_data_by_date(date, data_source, instrument_type, update_freq, data_type, contract, data_freq)\
                            for date in pd.date_range(start, end, freq='D').date]
             data = pd.concat(list_df)
             data.sort_values('datetime', inplace=True)
             data.reset_index(drop=True, inplace=True)
             return data
+        elif update_freq == 'total':
+            if type(contract) == str:
+                contract = [contract]
+
+            if use_parallel:
+                list_df = joblib.Parallel(n_jobs=-1, backend='loky', verbose=100)( \
+                    joblib.delayed(self.fetch_data_by_contract)(data_source, instrument_type, data_type, i, data_freq)\
+                    for i in contract)
+            else:
+                list_df = [self.fetch_data_by_contract(data_source, instrument_type, data_type, i, data_freq)\
+                           for i in contract]
+            data = pd.concat(list_df)
+            data.reset_index(drop=True, inplace=True)
+            return data
                 
-    def fetch_data_by_date(self, date, data_source, instrument_type, update_freq, data_type, contract_type, data_freq):
+    def fetch_data_by_date(self, date, data_source, instrument_type, update_freq, data_type, contract, data_freq):
         if data_source['type'] == 'url':
             if data_source['source'] == 'binance':
-                download_path = get_url_by_binance(date, data_source['content'], instrument_type, update_freq, data_type, contract_type, data_freq) # 特异性接口
+                download_path = get_url_by_binance(date, data_source['content'], instrument_type, update_freq, data_type, contract, data_freq) # 特异性接口
                 return self.get_data_by_url(download_path)
-        elif data_source['type'] == 'api':
-            if data_source['source'] == 'tushare':
-                api_func = get_api_func_by_tushare(date, data_source['content'][0], instrument_type, update_freq, data_type, contract_type, data_freq) # 特异性接口
-
-            api_args = data_source['content'][1]
-            return self.get_data_by_api(api_func, api_args)
+    
+    def fetch_data_by_contract(self, data_source, instrument_type, data_type, contract, data_freq):
+        if data_source['type'] == 'api':
+            return self.get_data_by_api(data_source, instrument_type, data_type, contract, data_freq)
 
     def get_data_by_url(self, download_path):
         num_try = 0
@@ -103,12 +117,15 @@ class DataFetcher:
                 print(f'Failed to reach url {download_path}, retry time = {num_try}/{retry_times}')
             num_try += 1
     
-    def get_data_by_api(api_func, api_args):
-        return api_func(api_args)
+    def get_data_by_api(self, data_source, instrument_type, data_type, contract, data_freq):
+        if data_source['source'] == 'tushare':
+            with open('conf/token.yaml', 'r') as file:
+                    config = yaml.safe_load(file)
+            token = config.get('tushare_token')
+            pro = ts.pro_api(token)
+            if (instrument_type == 'stock_index') and (data_type == 'klines') and (data_freq == '1d'):
+                return pro.index_daily(ts_code=contract).iloc[::-1]
 
-def get_url_by_binance(date, base_url, instrument_type, update_freq, data_type, contract_type, data_freq):
+def get_url_by_binance(date, base_url, instrument_type, update_freq, data_type, contract, data_freq):
     if instrument_type == 'futures':
-        return f'{base_url}/{instrument_type}/um/{update_freq}/{data_type}/{contract_type}/{data_freq}/{contract_type}-{data_freq}-{date}.zip'
-
-def get_api_func_by_tushare():
-    pass
+        return f'{base_url}/{instrument_type}/um/{update_freq}/{data_type}/{contract}/{data_freq}/{contract}-{data_freq}-{date}.zip'
