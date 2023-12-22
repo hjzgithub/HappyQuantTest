@@ -9,8 +9,8 @@ import numpy as np
 class Momentum(FactorManager):
     def __init__(self, data_path):
         super().__init__(data_path)
-        self.source_path = 'happyquant/raw_data/stock_index'
-        self.target_path = 'happyquant/factors/stock_index/momentum'
+        self.source_path = '/root/HappyQuantTest/happyquant/raw_data/stock_index'
+        self.target_path = '/root/HappyQuantTest/happyquant/factors/stock_index/momentum'
 
     def init_factors(self, window_list=[5, 10, 20, 40, 60]):
         df = self.df_raw[['trade_date', 'close', 'pre_close']].copy()

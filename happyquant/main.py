@@ -34,12 +34,12 @@ def test2():
     use_parallel = True
     data = mydf.fetch_data(start, end, data_source, instrument_type, update_freq, data_type, contract, data_freq, use_parallel)
     
+    store_path = f'happyquant/raw_data/{instrument_type}'
+    myde = DataEngine('local', store_path)
     for name, df in data.groupby('ts_code'):
-        store_path = f'happyquant/raw_data/{instrument_type}'
-        myde = DataEngine('local', store_path)
-        data_path = f'{name[:-3]}.parquet'
         df.reset_index(drop=True, inplace=True)
-        myde.save_data(data, data_path)
+        data_path = f'{name[:-3]}.parquet'
+        myde.save_data(df, data_path)
         myde.load_data(data_path)
 
 def test3():
@@ -54,5 +54,5 @@ def test3():
 
 if __name__ == "__main__":
     #test1()
-    test2()
-    #test3()
+    #test2()
+    test3()
