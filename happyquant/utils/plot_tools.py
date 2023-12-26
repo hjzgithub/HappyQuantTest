@@ -16,10 +16,14 @@ def plot_corr(df):
     plt.title('corr')
     plt.show()
 
-def plot_pnl(list_df: List):
+def plot_pnl(df):
+    if type(df) == list:
+        df = pd.concat(df, axis=1)
+        df.dropna(axis=0, inplace=True)
     plt.figure(figsize=(12, 8))
-    for pnl in list_df:
-        plt.plot(range(len(pnl)), pnl, label=pnl.name)
+    for column in df.columns:
+        pnl = df[column]
+        plt.plot(range(len(pnl)), pnl, label=column)
     plt.legend()
     plt.title('pnl')
     plt.show()
