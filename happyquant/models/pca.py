@@ -1,28 +1,21 @@
 from sklearn.decomposition import PCA
-from utils.cal_tools import ts_z_score
 import numpy as np
 import pandas as pd
 
 def fixed_pca(x, n_chosen=None):
-    if not n_chosen:
+    if n_chosen == None:
         origin = PCA(n_components=x.shape[1])
         origin.fit_transform(x)
         n_chosen = np.where(origin.explained_variance_ratio_.cumsum() > 0.9)[0][0] + 1
         
-    pca = PCA(n_components=n_chosen)
-    pca_components = pca.fit_transform(x)
+    pca_components = PCA(n_components=n_chosen).fit_transform(x)
     return pca_components
 
 def rolling_pca(df, back_window, n_chosen):
     df.fillna(method='ffill', axis=0, inplace=True)
     df.dropna(axis=0, inplace=True)
 
-    list_pca_results = []
-    for i in range(back_window, len(df.index)):
-        df_standard = df.iloc[i-back_window:i]
-        #df_standard = ts_z_score(df_standard)
-        pca_results = list(fixed_pca(df_standard.values, n_chosen)[-1])
-        list_pca_results.append(pca_results)
+    list_pca_results = [list(fixed_pca(df.iloc[i-back_window:i].values, n_chosen)[-1]) for i in range(back_window, len(df.index))]
 
     df_pca = pd.DataFrame(list_pca_results, index=df.index[back_window:])
     df_pca.columns = [('PCA_'+str(i)) for i in range(1, len(df_pca.columns)+1)]

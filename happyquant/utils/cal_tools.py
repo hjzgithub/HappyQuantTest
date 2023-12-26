@@ -28,13 +28,13 @@ def get_stats_result(df):
     return statistic_res
 
 def get_annualized_rets(rets, days_per_year=252):
-    return rets.mean() * days_per_year
+    return np.mean(rets) * days_per_year
 
 def get_annualized_vol(rets, frequency='daily', days_per_year=252):
     if frequency == 'daily':
-        return rets.std(ddof=1) * np.sqrt(days_per_year)
+        return np.std(rets, ddof=1) * np.sqrt(days_per_year)
     elif frequency == '30m':
-        return rets.std(ddof=1) * np.sqrt(days_per_year*8)
+        return np.std(rets, ddof=1) * np.sqrt(days_per_year*8)
     
 def get_sharpe_ratio(rets, frequency='daily', days_per_year=252, r_f=0):
     return (get_annualized_rets(rets) - r_f) / get_annualized_vol(rets, frequency, days_per_year)
@@ -45,6 +45,16 @@ def get_win_ratio(rets):
     return wins / (wins + losses)
 
 def get_win_per_loss(rets):
-    average_win = rets[rets > 0].mean()
-    average_loss = rets[rets < 0].mean()
-    return abs(average_win / average_loss)
+    average_win = np.mean(rets[rets > 0])
+    average_loss = np.mean(rets[rets < 0])
+    return -(average_win / average_loss)
+
+def get_buy_side_turnover(weights):
+    if len(weights) >= 2:
+        return (np.sum(np.abs(weights[1:] - weights[:-1])) + np.abs(weights[0]) + np.abs(weights[-1])) / (len(weights)+1) / 2
+    
+def get_1D_array_from_series(x_series: pd.Series):
+    return x_series.to_numpy().reshape(-1)
+
+def get_annualized_costs_by_turnover(turnover, costs_rate, days_per_year=252):
+    return turnover * days_per_year * costs_rate
