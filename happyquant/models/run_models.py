@@ -30,7 +30,7 @@ def rolling_run_models(df_factors, df_tags, back_window, with_pca=False, use_par
     df_tags.fillna(0, inplace=True)
 
     if use_parallel:
-        list_preds = joblib.Parallel(n_jobs=-1, backend='loky', verbose=-1)( \
+        list_preds = joblib.Parallel(n_jobs=-1, backend='loky', verbose=0)( \
                         joblib.delayed(run_model)(df_factors, df_tags, i, back_window, with_pca)\
                         for i in range(back_window+1, len(df_factors.index)))
     else:
