@@ -4,6 +4,7 @@ from factor_manager.momentum import Momentum
 from factor_manager.doubleMA import DoubleMA
 from factor_manager.rsi import RSI
 from factor_manager.kdj import KDJ
+from factor_manager.rumi import RUMI
 
 def test1():
     mydf = DataFetcher()

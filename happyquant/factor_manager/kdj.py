@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(sys.path[0]))
 
 from factor_manager.factor_template import FactorManager
-from utils.cal_tools import ts_rolling_max, ts_rolling_min
+from utils.cal_tools import ts_rolling_max, ts_rolling_min, ts_rolling_ewma
 
 class KDJ(FactorManager):
     def __init__(self, data_path):
@@ -30,7 +30,7 @@ def cal_rsv(df, n):
 
 def cal_kdj(df, n, m1=3, m2=3):
     rsv = cal_rsv(df, n)
-    k = rsv.ewm(com=m1 - 1, adjust=False).mean()
-    d = k.ewm(com=m2 - 1, adjust=False).mean()
+    k = ts_rolling_ewma(rsv, m1, recursively=True)
+    d = ts_rolling_ewma(k, m2, recursively=True)
     j = 3 * k - 2 * d
     return k-d, -j, j.diff()

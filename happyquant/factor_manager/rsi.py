@@ -22,7 +22,7 @@ class RSI(FactorManager):
 
         self.df_factors = df['trade_date'].to_frame()
         for n in window_list:  
-            self.df_factors['minus_rsi_' + str(n)] = -cal_rsi(gain_series, loss_series, n) # 取负号代表为超买超卖信号
+            self.df_factors['minus_rsi_' + str(n)] = cal_rsi(gain_series, loss_series, n) # 取负号代表为超买超卖信号
 
     def update_factors(self):
         pass

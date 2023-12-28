@@ -28,6 +28,13 @@ def ts_rolling_max(x: pd.Series, back_window: int):
 def ts_rolling_min(x: pd.Series, back_window: int):
     return x.rolling(back_window).min()
 
+def ts_rolling_ewma(x: pd.Series, back_window: int, recursively=False):
+    if recursively:
+        return x.ewm(com=back_window - 1, adjust=False).mean()
+    else:
+        return x.ewm(com=back_window - 1, adjust=True).mean()
+
+
 
 
 
