@@ -11,8 +11,12 @@ class Momentum(FactorManager):
         self.source_path = '/root/HappyQuantTest/happyquant/raw_data/stock_index'
         self.target_path = '/root/HappyQuantTest/happyquant/factors/stock_index/momentum'
 
-    def init_factors(self, window_list=[1, 5, 10, 20, 40, 60]):
-        df = self.df_raw[['trade_date', 'close', 'pre_close']].copy()
+    def init_factors(
+            self, 
+            columns=['trade_date', 'close', 'pre_close'],
+            window_list=[1, 5, 10, 20, 40, 60],
+        ):
+        df = self.df_raw[columns].copy()
         df['rets'] = df['close'] / df['pre_close'] - 1
         self.df_factors = df['trade_date'].to_frame()
         for n in window_list:  

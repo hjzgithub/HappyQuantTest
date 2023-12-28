@@ -22,6 +22,15 @@ def ts_rank_corr(x: pd.Series, y: pd.Series):
     correlation_coefficient, p_value = spearmanr(x.to_numpy().reshape(-1), y.to_numpy().reshape(-1))
     return correlation_coefficient, p_value
 
+def ts_rolling_max(x: pd.Series, back_window: int):
+    return x.rolling(back_window).max()
+
+def ts_rolling_min(x: pd.Series, back_window: int):
+    return x.rolling(back_window).min()
+
+
+
+
 def get_stats_result(df):
     statistic_res = df.agg(['mean', 'std', 'skew', 'kurt', 'min', 'max']).T
     statistic_res['mean_per_std'] = (statistic_res['mean']/statistic_res['std'])

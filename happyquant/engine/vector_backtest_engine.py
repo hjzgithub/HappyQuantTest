@@ -70,9 +70,11 @@ def benchmark_evaluation(df_tags, eval_label):
 
 def get_signal_from_factor(df_factors: pd.DataFrame, signal_method, df_tags=None, back_window=None, with_pca=None):
     if signal_method == 'equal_weight':
-        signal = df_factors.fillna(0).expanding(min_periods=back_window).rank(pct=True).fillna(0.5).mean(axis=1) # 因子生成信号,再等权合成 -- 弊端：无法判断因子的方向
+        # 因子生成信号,再等权合成 -- 弊端：无法判断因子的方向
+        signal = df_factors.fillna(0).expanding(min_periods=back_window).rank(pct=True).fillna(0.5).mean(axis=1) 
     elif signal_method == 'prediction':
-        df_preds = rolling_run_models(df_factors, df_tags, back_window, with_pca) # 因子合成单机器学习因子，预测目标为tag_raw或者tag_ranked
+        # 因子合成单机器学习因子，预测目标为tag_raw或者tag_ranked 
+        df_preds = rolling_run_models(df_factors, df_tags, back_window, with_pca)
         signal = df_preds.expanding(min_periods=back_window).rank(pct=True).fillna(0.5)
     return signal
 
@@ -96,7 +98,7 @@ def signal_evaluation(eval_label,
                         'win per loss': get_win_per_loss(portfolio_rets),
                         }, name=eval_label).to_frame().T
 
-    pnl = pd.Series((1 + portfolio_rets).cumprod() - 1, index=df_tags.index, name=eval_label)
+    pnl = pd.Series((1 + portfolio_rets).cumprod() - 1, index=signal.index, name=eval_label)
     return evaluation, pnl
 
 def vector_backtest(factor_classes, contracts, args_list):

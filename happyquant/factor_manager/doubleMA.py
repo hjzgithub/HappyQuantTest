@@ -11,8 +11,11 @@ class DoubleMA(FactorManager):
         self.source_path = '/root/HappyQuantTest/happyquant/raw_data/stock_index'
         self.target_path = '/root/HappyQuantTest/happyquant/factors/stock_index/doubleMA'
 
-    def init_factors(self):
-        df = self.df_raw[['trade_date', 'close']].copy()
+    def init_factors(
+            self, 
+            columns=['trade_date', 'close'],
+        ):
+        df = self.df_raw[columns].copy()
         self.df_factors = df['trade_date'].to_frame()
         self.df_factors['doubleMA_5_10'] = ts_rolling_mean(df['close'], 5) - ts_rolling_mean(df['close'], 10)
         self.df_factors['doubleMA_5_20'] = ts_rolling_mean(df['close'], 5) - ts_rolling_mean(df['close'], 20)
