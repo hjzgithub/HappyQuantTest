@@ -17,7 +17,9 @@ class DoubleMA(FactorManager):
         self.df_factors['doubleMA_5_10'] = ts_rolling_mean(df['close'], 5) - ts_rolling_mean(df['close'], 10)
         self.df_factors['doubleMA_5_20'] = ts_rolling_mean(df['close'], 5) - ts_rolling_mean(df['close'], 20)
         self.df_factors['doubleMA_5_60'] = ts_rolling_mean(df['close'], 5) - ts_rolling_mean(df['close'], 60)
+        self.df_factors['doubleMA_10_20'] = ts_rolling_mean(df['close'], 10) - ts_rolling_mean(df['close'], 20)
         self.df_factors['doubleMA_10_60'] = ts_rolling_mean(df['close'], 10) - ts_rolling_mean(df['close'], 60)
+        self.df_factors['doubleMA_20_60'] = ts_rolling_mean(df['close'], 20) - ts_rolling_mean(df['close'], 60)
 
     def update_factors(self):
         pass

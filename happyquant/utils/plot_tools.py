@@ -23,7 +23,7 @@ def plot_pnl(df):
     plt.figure(figsize=(12, 8))
     for column in df.columns:
         pnl = df[column]
-        plt.plot(range(len(pnl)), pnl, label=column)
+        plt.plot(pnl.index, pnl.values, label=column)
     plt.legend()
     plt.title('pnl')
     plt.show()

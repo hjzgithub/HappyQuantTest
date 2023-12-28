@@ -49,12 +49,12 @@ def get_win_per_loss(rets):
     average_loss = np.mean(rets[rets < 0])
     return -(average_win / average_loss)
 
-def get_buy_side_turnover(weights):
+def get_annualized_buy_side_turnover(weights, days_per_year=252):
     if len(weights) >= 2:
-        return (np.sum(np.abs(weights[1:] - weights[:-1])) + np.abs(weights[0]) + np.abs(weights[-1])) / (len(weights)+1) / 2
+        return (np.sum(np.abs(weights[1:] - weights[:-1])) + np.abs(weights[0]) + np.abs(weights[-1])) / (len(weights)+1) / 2 * days_per_year
     
 def get_1D_array_from_series(x_series: pd.Series):
     return x_series.to_numpy().reshape(-1)
 
-def get_annualized_costs_by_turnover(turnover, costs_rate, days_per_year=252):
-    return turnover * days_per_year * costs_rate
+def get_costs_by_annualized_turnover(turnover, costs_rate):
+    return turnover * costs_rate
