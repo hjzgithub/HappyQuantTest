@@ -1,10 +1,10 @@
 from data_manager.data_fetcher import DataFetcher
 from engine.data_engine import DataEngine
-from factor_manager.momentum import Momentum
-from factor_manager.doubleMA import DoubleMA
-from factor_manager.rsi import RSI
-from factor_manager.kdj import KDJ
-from factor_manager.rumi import RUMI
+from factor_manager.factor_miner.momentum import Momentum
+from factor_manager.factor_miner.doubleMA import DoubleMA
+from factor_manager.factor_miner.rsi import RSI
+from factor_manager.factor_miner.kdj import KDJ
+from factor_manager.factor_miner.rumi import RUMI
 
 def test1():
     mydf = DataFetcher()

@@ -1,3 +1,4 @@
 /happyquant/raw_data
 /conf/token.yaml
 /happyquant/factors
+!/happyquant/factor_miner/
