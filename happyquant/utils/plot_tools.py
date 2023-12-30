@@ -10,20 +10,23 @@ def plot_corr(df):
     if type(df) == list:
         df = pd.concat(df, axis=1)
         df.dropna(axis=0, inplace=True)
+
     plt.figure(figsize=(12, 8))
     sns.set_style('white')
     sns.heatmap(df.corr(), annot=True)
     plt.title('corr')
     plt.show()
 
-def plot_pnl(df):
-    if type(df) == list:
-        df = pd.concat(df, axis=1)
-        df.dropna(axis=0, inplace=True)
+def plot_cum_rets(df_rets):
+    if type(df_rets) == list:
+        df_rets = pd.concat(df_rets, axis=1)
+        df_rets.dropna(axis=0, inplace=True)
+        
     plt.figure(figsize=(12, 8))
-    for column in df.columns:
-        pnl = df[column]
-        plt.plot(pnl.index, pnl.values, label=column)
+    df_cum_rets = (1 + df_rets).cumprod() - 1
+    for column in df_cum_rets.columns:
+        cum_rets_series = df_cum_rets[column]
+        plt.plot(cum_rets_series.index, cum_rets_series.values, label=column)
     plt.legend()
-    plt.title('pnl')
+    plt.title('cum rets series')
     plt.show()

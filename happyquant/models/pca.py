@@ -2,7 +2,7 @@ from sklearn.decomposition import PCA
 import numpy as np
 import pandas as pd
 
-def fixed_pca(x, n_chosen=None):
+def fixed_pca(x: np.ndarray, n_chosen: int = None):
     if n_chosen == None:
         origin = PCA(n_components=x.shape[1])
         origin.fit_transform(x)
