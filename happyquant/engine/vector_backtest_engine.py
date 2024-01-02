@@ -21,7 +21,9 @@ class VectorBacktestEngine:
         df_raw = myde.load_data(data_path)
         df_tags = df_raw['trade_date'].to_frame()
         df_tags['tag_raw'] = (df_raw['close'] / df_raw['pre_close'] - 1).shift(-1).fillna(0)
-        df_tags['tag_class'] = np.where(df_tags['tag_raw'] > 0, 1, 0)
+        df_tags['tag_class'] = get_divided_by_single_bound(df_tags['tag_raw'])
+        df_tags['tag_ranked'] = ts_expanding_rank(df_tags['tag_raw'])
+        df_tags['tag_multi_class'] = get_divided_by_two_bounds(df_tags['tag_ranked'], 0.6, 0.4)
         df_tags.set_index('trade_date', inplace=True)
         df_tags.index = pd.to_datetime(df_tags.index, format='%Y%m%d')
 
@@ -39,7 +41,7 @@ class VectorBacktestEngine:
             contracts = [contracts]
 
         dict_signal = {}
-        dict_portfolio_rets = {}
+        list_portfolio_rets_total = []
         for contract_name in contracts:
             list_evaluation = []
             list_portfolio_rets = []
@@ -66,15 +68,16 @@ class VectorBacktestEngine:
                                                 df_tags, 
                                                 new_args.back_window, 
                                                 new_args.with_pca)
-                evaluation, portfolio_rets = signal_evaluation(f'{contract_name}_{new_args.model_id}',
-                                                    signal,
-                                                    df_tags, 
-                                                trade_type=new_args.trade_type, 
-                                                upper_bound=new_args.upper_bound, 
-                                                lower_bound=new_args.lower_bound)
+                eval_label = f'{contract_name}_{new_args.model_id}'
+                evaluation, portfolio_rets = signal_evaluation(eval_label,
+                                                                signal,
+                                                                df_tags, 
+                                                            trade_type=new_args.trade_type, 
+                                                            upper_bound=new_args.upper_bound, 
+                                                            lower_bound=new_args.lower_bound)
                 list_evaluation.append(evaluation)
                 list_portfolio_rets.append(portfolio_rets)
-                dict_signal[f'{contract_name}_{new_args.model_id}'] = signal
+                dict_signal[eval_label] = signal
             
             df_evaluation = pd.concat(list_evaluation)
             logger.info(df_evaluation.T)
@@ -82,9 +85,9 @@ class VectorBacktestEngine:
             # Plot profit and loss (P&L) for each model
             plot_cum_rets(list_portfolio_rets)
 
-            dict_portfolio_rets[contract_name] = list_portfolio_rets
+            list_portfolio_rets_total += list_portfolio_rets
     
-        return dict_portfolio_rets
+        return dict_signal, list_portfolio_rets_total
 
 def benchmark_evaluation(df_tags, eval_label):
     '''
@@ -116,19 +119,18 @@ def get_signal_from_factor(model_type: str,
     if model_type == 'rule_based':
         if model_name == 'vote':
             # 因子生成离散信号，再等权合成 -- 弊端：比较依赖先验知识
-            pass
-        elif model_name == 'equal_weight':
-            # 因子生成连续信号,再等权合成 -- 弊端：无法判断因子的方向
-            signal = df_factors.fillna(0).expanding().rank(pct=True).fillna(0.5).mean(axis=1) 
+            signal = df_factors.mean(axis=1) 
 
     elif model_type == 'prediction_based':
         # 因子合成单机器学习因子，预测目标为tag_raw或者tag_class
         df_preds = rolling_run_models(model_name, df_factors, df_tags[target_type], back_window, with_pca)
 
         if target_type == 'tag_raw':
-            signal = df_preds.expanding().rank(pct=True)
-        elif target_type == 'tag_class':
-            signal = df_preds.copy()
+            signal = pd.Series(get_divided_by_single_bound(df_preds).reshape(-1), index=df_preds.index)
+        elif (target_type == 'tag_ranked'):
+            signal = 2*df_preds - 1
+        elif (target_type == 'tag_class') | (target_type == 'tag_multi_class'):
+            signal = df_preds.copy()             
     return signal
     
 def get_weights_from_signal(signal: pd.Series, trade_type: str, upper_bound: float, lower_bound: float) -> np.ndarray:
@@ -146,11 +148,9 @@ def get_weights_from_signal(signal: pd.Series, trade_type: str, upper_bound: flo
     """
     signal = get_1D_array_from_series(signal)
     if trade_type == 'long_only':
-        weights = np.select([signal>upper_bound, signal<lower_bound, ~((signal>upper_bound) & (signal<lower_bound))],
-                             [1, 0, 0])
+        weights = (signal + 1) / 2
     elif trade_type == 'long_short':
-        weights = np.select([signal>upper_bound, signal<lower_bound, ~((signal>upper_bound) & (signal<lower_bound))], 
-                            [1, -1, 0])
+        weights = signal
     weights = get_1D_array_from_series(pd.Series(weights).fillna(method='ffill').fillna(0))
     return weights
 

@@ -1,11 +1,9 @@
 from data_manager.data_fetcher import DataFetcher
 from engine.data_engine import DataEngine
 from engine.factor_engine import FactorEngine
-from factor_manager.factor_miner.momentum import Momentum
-from factor_manager.factor_miner.doubleMA import DoubleMA
+from factor_manager.factor_miner.trend_following import TrendFollowing
 from factor_manager.factor_miner.rsi import RSI
 from factor_manager.factor_miner.kdj import KDJ
-from factor_manager.factor_miner.rumi import RUMI
 
 def test1():
     mydf = DataFetcher()
@@ -48,7 +46,7 @@ def test2():
         myde.load_data(data_path)
 
 def test3():
-    factor_class_list = [Momentum, DoubleMA, RSI, KDJ, RUMI]
+    factor_class_list = [TrendFollowing, RSI, KDJ]
     contract = ['000016.SH', '000300.SH', '000905.SH', '000852.SH']
     for factor_class in factor_class_list:
         for name in contract:

@@ -1,18 +1,14 @@
 import pandas as pd
-from utils.plot_tools import plot_cum_rets
+from utils.plot_tools import plot_cum_rets, plot_cum_rets_with_excess
 
-def get_list_portfolio(dict_pnl, contracts, chosen_model_id):
-    list_portfolio = []
-    for name in contracts:
-        list_pnl = dict_pnl[name]
-        for pnl in list_pnl:
-            if pnl.name == f'{name}_{chosen_model_id}':
-                list_portfolio.append(pnl)
-    return list_portfolio
-
-def get_portfolio_pnl(dict_pnl, contracts, chosen_model_id):
-    list_portfolio = get_list_portfolio(dict_pnl, contracts, chosen_model_id)
-    df_portfolio = pd.concat(list_portfolio, axis=1)
+def get_portfolio_pnl(list_portfolio_rets, chosen_model_id: str):
+    df_portfolio = pd.concat(list_portfolio_rets, axis=1)
     df_portfolio.dropna(axis=0, inplace=True)
-    df_portfolio['portfolio_equal_weight'] = df_portfolio.mean(axis=1)
-    plot_cum_rets(df_portfolio)
+    
+    chosen_columns = [i for i in df_portfolio.columns if i[-len(chosen_model_id):] == chosen_model_id]
+    plot_cum_rets(df_portfolio[chosen_columns])
+
+    df_portfolio['portfolio_equal_weight'] = df_portfolio[chosen_columns].mean(axis=1)
+    benchmark_columns = [i for i in df_portfolio.columns if i[-9:] == 'benchmark']
+    df_portfolio['portfolio_benchmark'] = df_portfolio[benchmark_columns].mean(axis=1)
+    plot_cum_rets_with_excess(df_portfolio['portfolio_equal_weight'], df_portfolio['portfolio_benchmark'])
