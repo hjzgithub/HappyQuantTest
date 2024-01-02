@@ -1,5 +1,6 @@
 from data_manager.data_fetcher import DataFetcher
 from engine.data_engine import DataEngine
+from engine.factor_engine import FactorEngine
 from factor_manager.factor_miner.momentum import Momentum
 from factor_manager.factor_miner.doubleMA import DoubleMA
 from factor_manager.factor_miner.rsi import RSI
@@ -46,17 +47,17 @@ def test2():
         myde.save_data(df, data_path)
         myde.load_data(data_path)
 
-def test3(factor_class):
+def test3():
+    factor_class_list = [Momentum, DoubleMA, RSI, KDJ, RUMI]
     contract = ['000016.SH', '000300.SH', '000905.SH', '000852.SH']
-    for name in contract:
-        data_path = f'{name[:-3]}.parquet'
-        mymm = factor_class(data_path)
-        mymm.load_raw_data_from_local()
-        mymm.init_factors()
-        mymm.save_factors_to_local()
-        mymm.load_factors_from_local()
+    for factor_class in factor_class_list:
+        for name in contract:
+            data_path = f'{name[:-3]}.parquet'
+            myfe = FactorEngine(factor_class, data_path)
+            myfe.save_factors()
+            myfe.load_factors()
 
 if __name__ == "__main__":
     #test1()
     #test2()
-    test3(RSI)
+    test3()

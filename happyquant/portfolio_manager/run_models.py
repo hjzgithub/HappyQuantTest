@@ -1,5 +1,5 @@
-from models.Handler import Handler
-from models.pca import fixed_pca
+from portfolio_manager.Handler import Handler
+from utils.pca_tools import fixed_pca
 import pandas as pd
 import joblib 
 
@@ -25,7 +25,7 @@ def run_model(model_name, *args):
     df_preds['preds'] = preds
     return df_preds
 
-def rolling_run_models(model_name, df_factors, df_tags, back_window, with_pca=False, use_parallel=True):
+def rolling_run_models(model_name, df_factors, df_tags, back_window, with_pca=False, use_parallel=True) -> pd.DataFrame:
     df_factors.fillna(0, inplace=True)
     df_tags.fillna(0, inplace=True)
 
