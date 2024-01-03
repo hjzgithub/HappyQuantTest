@@ -62,7 +62,8 @@ class VectorBacktestEngine:
             # Args Test
             for new_args in args_list:
                 signal = get_signal_from_factor(new_args.model_type, 
-                                                new_args.model_name, 
+                                                new_args.model_name,
+                                                new_args.model_id, 
                                                 new_args.target_type,
                                                 df_factors, 
                                                 df_tags, 
@@ -109,6 +110,7 @@ def benchmark_evaluation(df_tags, eval_label):
 
 def get_signal_from_factor(model_type: str, 
                            model_name: str, 
+                           model_id: str,
                            target_type: str, 
                            df_factors: pd.DataFrame, 
                            df_tags: pd.DataFrame, 
@@ -123,12 +125,12 @@ def get_signal_from_factor(model_type: str,
 
     elif model_type == 'prediction_based':
         # 因子合成单机器学习因子，预测目标为tag_raw或者tag_class
-        df_preds = rolling_run_models(model_name, df_factors, df_tags[target_type], back_window, with_pca)
+        df_preds = rolling_run_models(model_name, model_id, df_factors, df_tags[target_type], back_window, with_pca)
 
         if target_type == 'tag_raw':
             signal = pd.Series(get_divided_by_single_bound(df_preds).reshape(-1), index=df_preds.index)
-        elif (target_type == 'tag_ranked'):
-            signal = 2*df_preds - 1
+        elif target_type == 'tag_ranked':
+            signal = pd.Series(get_divided_by_single_bound(df_preds, 0.5).reshape(-1), index=df_preds.index)
         elif (target_type == 'tag_class') | (target_type == 'tag_multi_class'):
             signal = df_preds.copy()             
     return signal

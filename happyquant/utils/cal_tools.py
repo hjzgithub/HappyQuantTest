@@ -8,7 +8,7 @@ def ts_rolling_mean(df: pd.DataFrame, back_window: int):
 def ts_rolling_z_score(df: pd.DataFrame, back_window: int):
     return ((df - df.rolling(back_window).mean()) / df.rolling(back_window).std(ddof=1)).values
 
-def ts_z_score(df: pd.DataFrame):
+def ts_z_score(df: pd.DataFrame | pd.Series):
     return df.apply(lambda x:(x-x.mean())/x.std(ddof=1))
 
 def ts_rank(df: pd.DataFrame):
