@@ -7,10 +7,10 @@ import pandas as pd
 from loguru import logger
 
 class VectorBacktestEngine:
-    def __init__(self, factor_classes) -> None:
-        self.factor_classes = factor_classes
-        if not (type(factor_classes) == list):
-            factor_classes = [factor_classes]
+    def __init__(self, factor_names) -> None:
+        self.factor_names = factor_names
+        if not (type(factor_names) == list):
+            factor_names = [factor_names]
     
     def init_tags_and_factors(self, data_path):
 
@@ -28,8 +28,8 @@ class VectorBacktestEngine:
         df_tags.index = pd.to_datetime(df_tags.index, format='%Y%m%d')
 
         df_factors_total = pd.DataFrame()
-        for factor_class in self.factor_classes:
-            myfe = FactorEngine(factor_class, data_path)
+        for factor_name in self.factor_names:
+            myfe = FactorEngine(factor_name, data_path)
             df_factors = myfe.load_factors()
             df_factors.set_index('trade_date', inplace=True)
             df_factors.index = pd.to_datetime(df_factors.index, format='%Y%m%d')
