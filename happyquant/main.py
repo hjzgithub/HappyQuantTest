@@ -1,10 +1,6 @@
 from data_manager.data_fetcher import DataFetcher
 from engine.data_engine import DataEngine
 from engine.factor_engine import FactorEngine
-from factor_manager.factor_miner.trend_following import TrendFollowing
-from factor_manager.factor_miner.trend_following_discretized import TrendFollowingDiscretized
-from factor_manager.factor_miner.trend_reverse import TrendReverse
-from factor_manager.factor_miner.trend_reverse_discretized import TrendReverseDiscretized
 
 def test1():
     mydf = DataFetcher()
@@ -47,7 +43,7 @@ def test2():
         myde.load_data(data_path)
 
 def test3():
-    factor_class_list = [TrendFollowing, TrendFollowingDiscretized, TrendReverse, TrendReverseDiscretized]
+    factor_class_list = ['TrendFollowing', 'TrendFollowingDiscretized', 'TrendReverse', 'TrendReverseDiscretized']
     contract = ['000016.SH', '000300.SH', '000905.SH', '000852.SH']
     for factor_class in factor_class_list:
         for name in contract:

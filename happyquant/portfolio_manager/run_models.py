@@ -3,6 +3,7 @@ from utils.pca_tools import fixed_pca
 from utils.cal_tools import ts_z_score
 import pandas as pd
 import joblib 
+import numpy as np
 
 def get_data_split(df_factors, df_tags, i, back_window, with_pca):
     X, y = df_factors.iloc[i-back_window:i].to_numpy(), df_tags.iloc[i-back_window:i].to_numpy().reshape(-1)
@@ -15,14 +16,15 @@ def get_model_train_and_test(handler, model_id, X, y):
     X_train, X_test = X[:-1, :], X[-1, :].reshape(1, -1)
     y_train, y_test = y[:-1], y[-1] 
     handler.train_model(model_id, X_train, y_train)
-    '''
-    if feature_selection:
-        selected_indices = np.where(model.pvalues[1:] < 0.05)[0]
-        X_train = X_train[:, np.ix_(selected_indices)[0]]
 
-        # 筛选完特征后再fit
-        model.fit(X_train, y_train)
-    '''
+    if model_id.split('_')[0] == 'StatsOLSLRModel':
+        selected_indices = np.where(handler._models[model_id]._model.pvalues[1:] < 0.05)[0]
+        if len(selected_indices) > 0:
+            X_train = X_train[:, np.ix_(selected_indices)[0]]
+            
+            # 筛选完特征后再fit
+            handler.train_model(model_id, X_train, y_train)
+            X_test = X_test[:, np.ix_(selected_indices)[0]]
     return handler.evaluate_model(model_id, X_test, y_test)
 
 def run_model(handler, model_name, model_id, *args):

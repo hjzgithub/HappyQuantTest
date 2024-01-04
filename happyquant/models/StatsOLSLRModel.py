@@ -2,11 +2,10 @@ import os
 import joblib
 import yaml
 import numpy as np
-import pandas as pd
-import statsmodels.api as sm
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from ModelBase import ModelBase
+import statsmodels.api as sm
+
+from models.ModelBase import ModelBase
 
 class StatsOLSLRModel(ModelBase):
     def __init__(self, **kwargs):
@@ -31,6 +30,8 @@ class StatsOLSLRModel(ModelBase):
     def predict(self, X):
         if self.fit_intercept:
             X = sm.add_constant(X)
+        if X.shape[0] == 1:
+            X = np.insert(X, 0, 1)
         preds = self._model.predict(X)
         return preds
     

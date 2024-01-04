@@ -1,10 +1,8 @@
 import os
 import joblib
 import yaml
-import numpy as np
-import pandas as pd
+
 from sklearn import linear_model
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from models.ModelBase import ModelBase
 
