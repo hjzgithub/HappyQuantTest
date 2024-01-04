@@ -1,5 +1,5 @@
 from utils.cal_tools import *
-from utils.plot_tools import plot_corr, plot_cum_rets
+from utils.plot_tools import plot_corr, plot_cum_rets, plot_cum_rets_with_excess
 from engine.data_engine import DataEngine
 from engine.factor_engine import FactorEngine
 from portfolio_manager.run_models import rolling_run_models
@@ -23,7 +23,7 @@ class VectorBacktestEngine:
         df_tags['tag_raw'] = (df_raw['close'] / df_raw['pre_close'] - 1).shift(-1).fillna(0)
         df_tags['tag_class'] = get_divided_by_single_bound(df_tags['tag_raw'])
         df_tags['tag_ranked'] = ts_expanding_rank(df_tags['tag_raw'])
-        df_tags['tag_multi_class'] = get_divided_by_two_bounds(df_tags['tag_ranked'], 0.6, 0.4)
+        df_tags['tag_multi_class'] = get_divided_by_two_bounds(df_tags['tag_ranked'], 0.7, 0.3)
         df_tags.set_index('trade_date', inplace=True)
         df_tags.index = pd.to_datetime(df_tags.index, format='%Y%m%d')
 
@@ -88,7 +88,19 @@ class VectorBacktestEngine:
 
             list_portfolio_rets_total += list_portfolio_rets
     
-        return dict_signal, list_portfolio_rets_total
+        self.list_portfolio_rets_total = list_portfolio_rets_total.copy()
+    
+    def get_portfolio_pnl(self, chosen_model_id: str):
+        df_portfolio = pd.concat(self.list_portfolio_rets_total, axis=1)
+        df_portfolio.dropna(axis=0, inplace=True)
+        
+        chosen_columns = [i for i in df_portfolio.columns if i[-len(chosen_model_id):] == chosen_model_id]
+        plot_cum_rets(df_portfolio[chosen_columns])
+
+        df_portfolio['portfolio_equal_weight'] = df_portfolio[chosen_columns].mean(axis=1)
+        benchmark_columns = [i for i in df_portfolio.columns if i[-9:] == 'benchmark']
+        df_portfolio['portfolio_benchmark'] = df_portfolio[benchmark_columns].mean(axis=1)
+        plot_cum_rets_with_excess(df_portfolio['portfolio_equal_weight'], df_portfolio['portfolio_benchmark'])
 
 def benchmark_evaluation(df_tags, eval_label):
     '''
@@ -179,3 +191,4 @@ def signal_evaluation(eval_label: str,
 
     portfolio_rets_series = pd.Series(portfolio_rets, index=signal.index, name=eval_label)
     return evaluation, portfolio_rets_series
+

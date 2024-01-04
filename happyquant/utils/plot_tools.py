@@ -35,13 +35,12 @@ def plot_cum_rets_with_excess(df_rets, df_benchmark):
     plt.figure(figsize=(12, 8))
     
     cum_rets_series = get_cumrets_from_rets(df_rets)
-    plt.plot(cum_rets_series.index, cum_rets_series.values, label='portfolio')
-
     benchmark_series = get_cumrets_from_rets(df_benchmark.loc[cum_rets_series.index])
-    plt.plot(benchmark_series.index, benchmark_series.values, label='benchmark')
-
     excess_series = (1+cum_rets_series)/(1+benchmark_series) - 1
-    plt.plot(excess_series.index, excess_series.values, label='excess')
+    
+    plt.plot(benchmark_series.index, benchmark_series.values, label='benchmark')
+    plt.plot(cum_rets_series.index, cum_rets_series.values, label='portfolio')
+    plt.plot(excess_series.index, excess_series.values, label='excess', color='gray')
 
     plt.legend()
     plt.title('cum rets series with excess')

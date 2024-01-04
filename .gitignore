@@ -1,6 +1,5 @@
-/happyquant/raw_data
 /conf/token.yaml
+/happyquant/raw_data
 /happyquant/factors
-/happyquant/factor_manager/factor_miner
-/trash
+/happyquant/factor_manager/factor_miner/*
 **/__pycache__/
