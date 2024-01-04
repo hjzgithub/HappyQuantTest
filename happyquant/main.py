@@ -80,14 +80,16 @@ def get_args_with_batch_id(batch_id: int) -> argparse.Namespace:
     if batch_id == 1:
         args.model_type = 'prediction_based'
         args.model_name = 'OLSLRModel'
-        args.target_type = 'tag_raw'   
+        args.target_type = 'tag_raw'  
+        args.with_ts_z_score = False 
         args.with_pca = False
         args.model_id = 'OLSLRModel'
     
     elif batch_id == 2:
         args.model_type = 'prediction_based'
         args.model_name = 'OLSLRModel'
-        args.target_type = 'tag_ranked'   
+        args.target_type = 'tag_ranked' 
+        args.with_ts_z_score = False   
         args.with_pca = False
         args.model_id = 'OLSLRModel_tag_ranked'
 
@@ -95,6 +97,7 @@ def get_args_with_batch_id(batch_id: int) -> argparse.Namespace:
         args.model_type = 'prediction_based'
         args.model_name = 'OLSLRModel'
         args.target_type = 'tag_ranked'   
+        args.with_ts_z_score = True
         args.with_pca = True
         args.model_id = 'OLSLRModel_tag_ranked_PCA'
 
@@ -102,6 +105,7 @@ def get_args_with_batch_id(batch_id: int) -> argparse.Namespace:
         args.model_type = 'prediction_based'
         args.model_name = 'StatsOLSLRModel'
         args.target_type = 'tag_ranked'   
+        args.with_ts_z_score = False 
         args.with_pca = False
         args.model_id = 'StatsOLSLRModel_tag_ranked'
 
@@ -109,6 +113,7 @@ def get_args_with_batch_id(batch_id: int) -> argparse.Namespace:
         args.model_type = 'prediction_based'
         args.model_name = 'LassoLRModel'
         args.target_type = 'tag_ranked'   
+        args.with_ts_z_score = True
         args.with_pca = False
         args.model_id = 'LassoLRModel_tag_ranked'
 
@@ -116,13 +121,15 @@ def get_args_with_batch_id(batch_id: int) -> argparse.Namespace:
         args.model_type = 'prediction_based'
         args.model_name = 'LogisticModel'
         args.target_type = 'tag_class'   
+        args.with_ts_z_score = False 
         args.with_pca = False
         args.model_id = 'LogisticModel_tag_class'
 
     elif batch_id == 11:
         args.model_type = 'prediction_based'
         args.model_name = 'LogisticModel'
-        args.target_type = 'tag_multi_class'   
+        args.target_type = 'tag_multi_class' 
+        args.with_ts_z_score = False   
         args.with_pca = False
         args.model_id = 'LogisticModel_tag_multi_class'
 

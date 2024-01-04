@@ -55,9 +55,13 @@ class VectorBacktestEngine:
             plot_corr([df_tags, df_factors])
 
             # Benchmark
-            evaluation, portfolio_rets = benchmark_evaluation(df_tags, f'{contract_name}_benchmark')
+            eval_label = f'{contract_name}_benchmark'
+            rets = df_tags['tag_raw'].fillna(0)
+            weights = 1
+            portfolio_rets = get_portfolio_rets_from_weights(rets, weights)
+            evaluation = portfolio_evaluation(portfolio_rets, eval_label)
             list_evaluation.append(evaluation)
-            list_portfolio_rets.append(portfolio_rets)
+            list_portfolio_rets.append(pd.Series(portfolio_rets, index=df_tags.index, name=eval_label))
 
             # Args Test
             for new_args in args_list:
@@ -68,6 +72,7 @@ class VectorBacktestEngine:
                                                 df_factors, 
                                                 df_tags, 
                                                 new_args.back_window, 
+                                                new_args.with_ts_z_score,
                                                 new_args.with_pca)
                 eval_label = f'{contract_name}_{new_args.model_id}'
                 evaluation, portfolio_rets = signal_evaluation(eval_label,
@@ -90,35 +95,33 @@ class VectorBacktestEngine:
     
         self.list_portfolio_rets_total = list_portfolio_rets_total.copy()
     
-    def get_portfolio_pnl(self, chosen_model_id: str):
+    def get_portfolio_pnl(self, chosen_model_id: str, leverage: float = 1.0, portfolio_methods = ['equal_weight']):
         df_portfolio = pd.concat(self.list_portfolio_rets_total, axis=1)
         df_portfolio.dropna(axis=0, inplace=True)
         
         chosen_columns = [i for i in df_portfolio.columns if i[-len(chosen_model_id):] == chosen_model_id]
+        df_portfolio[chosen_columns] = df_portfolio[chosen_columns] * leverage
         plot_cum_rets(df_portfolio[chosen_columns])
 
-        df_portfolio['portfolio_equal_weight'] = df_portfolio[chosen_columns].mean(axis=1)
+        list_evaluation = []
+
         benchmark_columns = [i for i in df_portfolio.columns if i[-9:] == 'benchmark']
         df_portfolio['portfolio_benchmark'] = df_portfolio[benchmark_columns].mean(axis=1)
-        plot_cum_rets_with_excess(df_portfolio['portfolio_equal_weight'], df_portfolio['portfolio_benchmark'])
+        eval_label = f'portfolio_benchmark'
+        evaluation = portfolio_evaluation(df_portfolio[eval_label], eval_label)
+        list_evaluation.append(evaluation)
 
-def benchmark_evaluation(df_tags, eval_label):
-    '''
-    对组合收益率的评估
-    '''
-    rets = df_tags['tag_raw'].fillna(0)
-    weights = 1
-    portfolio_rets = get_1D_array_from_series(rets) * weights
+        for portfolio_method in portfolio_methods:
+            if portfolio_method == 'equal_weight':
+                df_portfolio['portfolio_equal_weight'] = df_portfolio[chosen_columns].mean(axis=1) 
     
-    evaluation = pd.Series({
-                            'annualized return': get_annualized_rets(portfolio_rets),
-                            'sharpe ratio': get_sharpe_ratio(portfolio_rets),
-                            'win ratio': get_win_ratio(portfolio_rets),
-                            'win per loss': get_win_per_loss(portfolio_rets),
-                            }, name=eval_label).to_frame().T
-    
-    portfolio_rets_series = pd.Series(portfolio_rets, index=df_tags.index, name=eval_label)
-    return evaluation, portfolio_rets_series
+            eval_label = f'portfolio_{portfolio_method}'
+            evaluation = portfolio_evaluation(df_portfolio[eval_label], eval_label)
+            list_evaluation.append(evaluation)
+
+        df_evaluation = pd.concat(list_evaluation)
+        logger.info(df_evaluation.T)
+        plot_cum_rets_with_excess(df_portfolio[eval_label], df_portfolio['portfolio_benchmark'])
 
 def get_signal_from_factor(model_type: str, 
                            model_name: str, 
@@ -127,6 +130,7 @@ def get_signal_from_factor(model_type: str,
                            df_factors: pd.DataFrame, 
                            df_tags: pd.DataFrame, 
                            back_window: int = None, 
+                           with_ts_z_score: bool = False,
                            with_pca: bool = False,
                            ):
     # 注：signal是需要归一化的
@@ -137,7 +141,7 @@ def get_signal_from_factor(model_type: str,
 
     elif model_type == 'prediction_based':
         # 因子合成单机器学习因子，预测目标为tag_raw或者tag_class
-        df_preds = rolling_run_models(model_name, model_id, df_factors, df_tags[target_type], back_window, with_pca)
+        df_preds = rolling_run_models(model_name, model_id, df_factors, df_tags[target_type], back_window, with_ts_z_score, with_pca)
 
         if target_type == 'tag_raw':
             signal = pd.Series(get_divided_by_single_bound(df_preds).reshape(-1), index=df_preds.index)
@@ -168,6 +172,10 @@ def get_weights_from_signal(signal: pd.Series, trade_type: str, upper_bound: flo
     weights = get_1D_array_from_series(pd.Series(weights).fillna(method='ffill').fillna(0))
     return weights
 
+def get_portfolio_rets_from_weights(rets, weights):
+    portfolio_rets = get_1D_array_from_series(rets) * weights
+    return portfolio_rets
+
 def signal_evaluation(eval_label: str,
                       signal: pd.Series,
                       df_tags: pd.DataFrame, 
@@ -178,7 +186,7 @@ def signal_evaluation(eval_label: str,
     rets = df_tags['tag_raw'].loc[signal.index].fillna(0)
     weights = get_weights_from_signal(signal, trade_type, upper_bound, lower_bound)
     annualized_turnover = get_annualized_buy_side_turnover(weights)
-    portfolio_rets = get_1D_array_from_series(rets) * weights
+    portfolio_rets = get_portfolio_rets_from_weights(rets, weights)
 
     evaluation = pd.Series({
                         'annualized turnover(buy side)': annualized_turnover,
@@ -192,3 +200,11 @@ def signal_evaluation(eval_label: str,
     portfolio_rets_series = pd.Series(portfolio_rets, index=signal.index, name=eval_label)
     return evaluation, portfolio_rets_series
 
+def portfolio_evaluation(portfolio_rets: np.ndarray, eval_label: str):
+    evaluation = pd.Series({
+                            'annualized return': get_annualized_rets(portfolio_rets),
+                            'sharpe ratio': get_sharpe_ratio(portfolio_rets),
+                            'win ratio': get_win_ratio(portfolio_rets),
+                            'win per loss': get_win_per_loss(portfolio_rets),
+                            }, name=eval_label).to_frame().T
+    return evaluation

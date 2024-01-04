@@ -1,0 +1,10 @@
+alpha: 1.0e-3
+fit_intercept: True
+precompute: False
+copy_X: False
+max_iter: 1000
+tol: 1.0e-4
+warm_start: False
+positive: False
+random_state: 42
+selection: cyclic
