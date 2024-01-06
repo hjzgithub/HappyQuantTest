@@ -1,0 +1,8 @@
+model_type: prediction_based
+model_name: OLSLRModel
+back_window: 1000
+with_ts_z_score: False 
+with_pca: False
+target_type: tag_raw
+trade_type: long_short
+model_id: OLSLRModel

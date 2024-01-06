@@ -2,11 +2,11 @@ from sklearn.decomposition import PCA
 import numpy as np
 import pandas as pd
 
-def fixed_pca(x: np.ndarray, n_chosen: int = None):
+def fixed_pca(x: np.ndarray, n_chosen: int = None, lower_bound: float = 0.9):
     if n_chosen == None:
         origin = PCA(n_components=x.shape[1])
         origin.fit_transform(x)
-        n_chosen = np.where(origin.explained_variance_ratio_.cumsum() > 0.9)[0][0] + 1
+        n_chosen = np.where(origin.explained_variance_ratio_.cumsum() > lower_bound)[0][0] + 1
         
     pca_components = PCA(n_components=n_chosen).fit_transform(x)
     return pca_components

@@ -1,0 +1,8 @@
+alpha: 1.0e-1
+fit_intercept: True
+copy_X: False
+max_iter: 1000
+tol: 1.0e-4
+solver: auto
+positive: False
+random_state: 42

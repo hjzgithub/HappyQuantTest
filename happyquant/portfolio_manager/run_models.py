@@ -1,16 +1,19 @@
 from portfolio_manager.Handler import Handler
 from utils.pca_tools import fixed_pca
-from utils.cal_tools import ts_z_score
+from utils.cal_tools import *
 import pandas as pd
 import joblib 
 import numpy as np
 
-def get_data_split(df_factors, df_tags, i, back_window, with_ts_z_score, with_pca):
+def get_data_split(df_factors, df_tags, i, back_window, with_ts_z_score, with_pca, target_type):
     X, y = df_factors.iloc[i-back_window:i].to_numpy(), df_tags.iloc[i-back_window:i].to_numpy().reshape(-1)
     if with_ts_z_score:
         X = ts_z_score(pd.DataFrame(X)).to_numpy()
     if with_pca:
-        X = fixed_pca(X)
+        X = fixed_pca(X, 2)
+
+    if target_type == 'tag_class':
+        y = get_divided_by_single_bound(y)
     return X, y, [df_factors.index[i]]
 
 def get_model_train_and_test(handler, model_id, X, y):
@@ -38,18 +41,19 @@ def run_model(handler, model_name, model_id, *args):
     df_preds['preds'] = preds
     return df_preds
 
-def rolling_run_models(model_name, model_id, df_factors, df_tags, back_window, with_ts_z_score, with_pca, use_parallel=True) -> pd.DataFrame:
+def rolling_run_models(model_name, model_id, df_factors, df_tags, back_window, with_ts_z_score, with_pca, target_type, use_parallel=True) -> pd.DataFrame:
     df_factors.fillna(0, inplace=True)
     df_tags.fillna(0, inplace=True)
 
     handler = Handler()
-    
+    # debug
+    #use_parallel = False
     if use_parallel:
         list_preds = joblib.Parallel(n_jobs=-1, backend='loky', verbose=0)( \
-                        joblib.delayed(run_model)(handler, model_name, model_id, df_factors, df_tags, i, back_window, with_ts_z_score, with_pca)\
+                        joblib.delayed(run_model)(handler, model_name, model_id, df_factors, df_tags, i, back_window, with_ts_z_score, with_pca, target_type)\
                         for i in range(back_window+1, len(df_factors.index)))
     else:
-        list_preds = [run_model(handler, model_name, model_id, df_factors, df_tags, i, back_window, with_ts_z_score, with_pca)\
+        list_preds = [run_model(handler, model_name, model_id, df_factors, df_tags, i, back_window, with_ts_z_score, with_pca, target_type)\
                       for i in range(back_window+1, len(df_factors.index))]
     df_preds = pd.concat(list_preds)
     df_preds.sort_index(inplace=True)

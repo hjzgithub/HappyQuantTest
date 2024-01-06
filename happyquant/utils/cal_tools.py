@@ -40,7 +40,7 @@ def ts_rolling_ewma(x: pd.Series, back_window: int, recursively=False):
     else:
         return x.ewm(com=back_window - 1, adjust=True).mean()
 
-def get_divided_by_single_bound(x: pd.Series, bound=0, upper_value=1, lower_value=-1):
+def get_divided_by_single_bound(x: pd.Series | np.ndarray, bound=0, upper_value=1, lower_value=-1):
     return np.where(x > bound, upper_value, lower_value)
 
 def get_divided_by_two_bounds(x: pd.Series, upper_bound=0.8, lower_bound=0.2, upper_value=1, lower_value=-1, mid_value=0):
