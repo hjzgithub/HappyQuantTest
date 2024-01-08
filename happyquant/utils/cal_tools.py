@@ -20,12 +20,12 @@ def ts_expanding_rank(df: pd.DataFrame, back_window: int = None):
     else:
         return df.expanding().rank(pct=True)
 
-def ts_corr(x: pd.Series, y: pd.Series):
-    correlation_coefficient, p_value = pearsonr(x.to_numpy().reshape(-1), y.to_numpy().reshape(-1))
+def ts_corr(x: np.ndarray, y: np.ndarray):
+    correlation_coefficient, p_value = pearsonr(x, y)
     return correlation_coefficient, p_value
 
-def ts_rank_corr(x: pd.Series, y: pd.Series):
-    correlation_coefficient, p_value = spearmanr(x.to_numpy().reshape(-1), y.to_numpy().reshape(-1))
+def ts_rank_corr(x: np.ndarray, y: np.ndarray):
+    correlation_coefficient, p_value = spearmanr(x, y)
     return correlation_coefficient, p_value
 
 def ts_rolling_max(x: pd.Series, back_window: int):

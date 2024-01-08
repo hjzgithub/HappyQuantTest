@@ -1,8 +1,8 @@
 from utils.cal_tools import *
-from utils.plot_tools import plot_corr, plot_cum_rets, plot_cum_rets_with_excess
+from utils.plot_tools import plot_cum_rets, plot_cum_rets_with_excess
 from engine.data_engine import DataEngine
 from engine.factor_engine import FactorEngine
-from portfolio_manager.run_models import rolling_run_models
+from model_manager.model_engine import rolling_run_models
 import pandas as pd
 from loguru import logger
 
@@ -48,9 +48,6 @@ class VectorBacktestEngine:
             
             df_tags, df_factors = self.init_tags_and_factors(data_path)
 
-            # Plot correlation between tags and factors
-            plot_corr([df_tags, df_factors])
-
             # Benchmark
             eval_label = f'{contract_name}_benchmark'
             rets = df_tags['tag_raw'].fillna(0)
@@ -66,9 +63,12 @@ class VectorBacktestEngine:
                                             df_factors, 
                                             df_tags, 
                                             params['back_window'], 
-                                            params['with_ts_z_score'],
-                                            params['with_pca'],
-                                            params['target_type'],)
+                                            params['target_type'], 
+                                            params['standardize_method'], 
+                                            params['single_test_method'], 
+                                            params['combine_method'], 
+                                            params['multi_test_method'],
+                                            )
             eval_label = f"{contract_name}_{params['model_id']}"
             evaluation, portfolio_rets = signal_evaluation(eval_label,
                                                             signal,
@@ -122,10 +122,12 @@ def get_signal_from_factor(model_type: str,
                            model_id: str,
                            df_factors: pd.DataFrame, 
                            df_tags: pd.DataFrame, 
-                           back_window: int = None, 
-                           with_ts_z_score: bool = False,
-                           with_pca: bool = False,
-                           target_type: str = 'tag_raw',
+                           back_window: int, 
+                           target_type, 
+                           standardize_method, 
+                           single_test_method, 
+                           combine_method, 
+                           multi_test_method,
                            ):
     # 注：signal是需要归一化的
     if model_type == 'rule_based':
@@ -135,7 +137,8 @@ def get_signal_from_factor(model_type: str,
 
     elif model_type == 'prediction_based':
         # 因子合成单机器学习因子，预测目标为tag_raw或者tag_class
-        df_preds = rolling_run_models(model_name, model_id, df_factors, df_tags['tag_raw'], back_window, with_ts_z_score, with_pca, target_type)
+        df_preds = rolling_run_models(model_name, model_id, df_factors, df_tags['tag_raw'], back_window, target_type, \
+                                      standardize_method, single_test_method, combine_method, multi_test_method)
 
         if target_type == 'tag_raw':
             signal = pd.Series(get_divided_by_single_bound(df_preds).reshape(-1), index=df_preds.index)
