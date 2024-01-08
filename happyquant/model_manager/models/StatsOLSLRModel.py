@@ -1,29 +1,37 @@
 import os
 import joblib
 import yaml
+import numpy as np
 
-from sklearn import linear_model
+import statsmodels.api as sm
 
-from models.ModelBase import ModelBase
+from model_manager.models.ModelBase import ModelBase
 
-class OLSLRModel(ModelBase):
+class StatsOLSLRModel(ModelBase):
     def __init__(self, **kwargs):
-        super(OLSLRModel, self).__init__(**kwargs)
+        super(StatsOLSLRModel, self).__init__(**kwargs)
         model_dir = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(model_dir, "configs", "OLSLRModel.yaml"), 'r') as file:
+        with open(os.path.join(model_dir, "configs", "StatsOLSLRModel.yaml"), 'r') as file:
             params = yaml.safe_load(file)
         self.set_params(**params)
 
     def build_model(self):
         params = self._params
-        self._model = linear_model.LinearRegression(**params)
+        self.fit_intercept = params['fit_intercept']
+        self._model = None
         return self._model
 
     def fit(self, X, y, profile=[]):
-        self._model.fit(X, y)
+        if self.fit_intercept:
+            X = sm.add_constant(X)
+        self._model = sm.OLS(y, X).fit()
         return self._model
 
     def predict(self, X):
+        if self.fit_intercept:
+            X = sm.add_constant(X)
+        if X.shape[0] == 1:
+            X = np.insert(X, 0, 1)
         preds = self._model.predict(X)
         return preds
     

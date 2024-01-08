@@ -1,37 +1,29 @@
 import os
 import joblib
 import yaml
-import numpy as np
 
-import statsmodels.api as sm
+from sklearn import linear_model
 
-from models.ModelBase import ModelBase
+from model_manager.models.ModelBase import ModelBase
 
-class StatsOLSLRModel(ModelBase):
+class LogisticModel(ModelBase):
     def __init__(self, **kwargs):
-        super(StatsOLSLRModel, self).__init__(**kwargs)
+        super(LogisticModel, self).__init__(**kwargs)
         model_dir = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(model_dir, "configs", "StatsOLSLRModel.yaml"), 'r') as file:
+        with open(os.path.join(model_dir, "configs", "LogisticModel.yaml"), 'r') as file:
             params = yaml.safe_load(file)
         self.set_params(**params)
 
     def build_model(self):
         params = self._params
-        self.fit_intercept = params['fit_intercept']
-        self._model = None
+        self._model = linear_model.LogisticRegression(**params)
         return self._model
 
     def fit(self, X, y, profile=[]):
-        if self.fit_intercept:
-            X = sm.add_constant(X)
-        self._model = sm.OLS(y, X).fit()
+        self._model.fit(X, y)
         return self._model
 
     def predict(self, X):
-        if self.fit_intercept:
-            X = sm.add_constant(X)
-        if X.shape[0] == 1:
-            X = np.insert(X, 0, 1)
         preds = self._model.predict(X)
         return preds
     

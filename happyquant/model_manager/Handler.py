@@ -7,7 +7,7 @@ class Handler:
 
     def new_model(self, model_name, model_id, params=None):
         # Generate model instance
-        model_file = ".".join(["models", model_name])
+        model_file = ".".join(["model_manager.models", model_name])
         model_module = importlib.import_module(model_file)
         model_class = getattr(model_module, model_name)
         self._models[model_id] = model_class()

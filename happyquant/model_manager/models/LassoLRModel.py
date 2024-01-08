@@ -4,19 +4,19 @@ import yaml
 
 from sklearn import linear_model
 
-from models.ModelBase import ModelBase
+from model_manager.models.ModelBase import ModelBase
 
-class LogisticModel(ModelBase):
+class LassoLRModel(ModelBase):
     def __init__(self, **kwargs):
-        super(LogisticModel, self).__init__(**kwargs)
+        super(LassoLRModel, self).__init__(**kwargs)
         model_dir = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(model_dir, "configs", "LogisticModel.yaml"), 'r') as file:
+        with open(os.path.join(model_dir, "configs", "LassoLRModel.yaml"), 'r') as file:
             params = yaml.safe_load(file)
         self.set_params(**params)
 
     def build_model(self):
         params = self._params
-        self._model = linear_model.LogisticRegression(**params)
+        self._model = linear_model.Lasso(**params)
         return self._model
 
     def fit(self, X, y, profile=[]):

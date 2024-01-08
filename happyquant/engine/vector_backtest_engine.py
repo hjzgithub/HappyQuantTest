@@ -2,7 +2,7 @@ from utils.cal_tools import *
 from utils.plot_tools import plot_cum_rets, plot_cum_rets_with_excess
 from engine.data_engine import DataEngine
 from engine.factor_engine import FactorEngine
-from model_manager.model_engine import rolling_run_models
+from engine.model_engine import ModelEngine
 import pandas as pd
 from loguru import logger
 
@@ -136,8 +136,9 @@ def get_signal_from_factor(model_type: str,
             signal = df_factors.mean(axis=1) 
 
     elif model_type == 'prediction_based':
-        # 因子合成单机器学习因子，预测目标为tag_raw或者tag_class
-        df_preds = rolling_run_models(model_name, model_id, df_factors, df_tags['tag_raw'], back_window, target_type, \
+        # 机器学习预测
+        myme = ModelEngine()
+        df_preds = myme.rolling_run_models(model_name, model_id, df_factors, df_tags['tag_raw'], back_window, target_type, \
                                       standardize_method, single_test_method, combine_method, multi_test_method)
 
         if target_type == 'tag_raw':

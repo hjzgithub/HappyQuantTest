@@ -4,7 +4,7 @@ import yaml
 
 from sklearn import linear_model
 
-from models.ModelBase import ModelBase
+from model_manager.models.ModelBase import ModelBase
 
 class RidgeLRModel(ModelBase):
     def __init__(self, **kwargs):
