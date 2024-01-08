@@ -5,6 +5,7 @@ from engine.factor_engine import FactorEngine
 from engine.model_engine import ModelEngine
 import pandas as pd
 from loguru import logger
+import os
 
 class VectorBacktestEngine:
     def __init__(self, factor_names) -> None:
@@ -37,7 +38,7 @@ class VectorBacktestEngine:
         if type(contracts) == str:
             contracts = [contracts]
 
-        dict_signal = {}
+        list_signal = []
         list_portfolio_rets_total = []
         for contract_name in contracts:
             list_evaluation = []
@@ -49,13 +50,9 @@ class VectorBacktestEngine:
             df_tags, df_factors = self.init_tags_and_factors(data_path)
 
             # Benchmark
-            eval_label = f'{contract_name}_benchmark'
             rets = df_tags['tag_raw'].fillna(0)
-            weights = 1
-            portfolio_rets = get_portfolio_rets_from_weights(rets, weights)
-            evaluation = portfolio_evaluation(portfolio_rets, eval_label)
-            list_evaluation.append(evaluation)
-            list_portfolio_rets.append(pd.Series(portfolio_rets, index=df_tags.index, name=eval_label))
+            portfolio_rets_benchmark = pd.Series(get_portfolio_rets_from_weights(rets, weights=1), index=df_tags.index, name=f'{contract_name}_benchmark')
+            list_portfolio_rets.append(portfolio_rets_benchmark)
 
             signal = get_signal_from_factor(params['model_type'], 
                                             params['model_name'],
@@ -69,16 +66,16 @@ class VectorBacktestEngine:
                                             params['combine_method'], 
                                             params['multi_test_method'],
                                             )
-            eval_label = f"{contract_name}_{params['model_id']}"
-            evaluation, portfolio_rets = signal_evaluation(eval_label,
-                                                            signal,
-                                                            df_tags, 
-                                                        trade_type=params['trade_type'], 
-                                                        )
-            list_evaluation.append(evaluation)
+            signal.name = f"{contract_name}_{params['model_id']}"
+            list_signal.append(signal)
+
+            evaluation, portfolio_rets = signal_evaluation(signal, df_tags, trade_type=params['trade_type'])
             list_portfolio_rets.append(portfolio_rets)
-            dict_signal[eval_label] = signal
-            
+        
+            # 对benchmark的evaluation
+            evaluation_benchmark = portfolio_evaluation(portfolio_rets_benchmark.loc[portfolio_rets.index], eval_label=f'{contract_name}_benchmark') 
+            list_evaluation.append(evaluation_benchmark)
+            list_evaluation.append(evaluation)
             df_evaluation = pd.concat(list_evaluation)
             logger.info(df_evaluation.T)
 
@@ -86,14 +83,26 @@ class VectorBacktestEngine:
             plot_cum_rets(list_portfolio_rets)
 
             list_portfolio_rets_total += list_portfolio_rets
+
+        # 根据model_id存储list_signal和list_portfolio_rets_total
+        result_folder_path = f"{params['result_dir']}/{params['model_id']}"
+        os.makedirs(result_folder_path, exist_ok=True)
+
+        df_signals = pd.concat(list_signal, axis=1) # 对不同标的的信号
+        df_signals.dropna(axis=0, inplace=True)
+        logger.info(df_signals.head().T)
+        df_signals.to_parquet(f"{result_folder_path}/signals.parquet")
+
+        df_portfolio_rets = pd.concat(list_portfolio_rets_total, axis=1)
+        df_portfolio_rets.dropna(axis=0, inplace=True)
+        logger.info(df_portfolio_rets.head().T) # 包含benchmark 和 择时 的收益率
+        df_portfolio_rets.to_parquet(f"{result_folder_path}/portfolio_rets.parquet")
     
-        self.list_portfolio_rets_total = list_portfolio_rets_total.copy()
-    
-    def get_portfolio_pnl(self, chosen_model_id: str, leverage: float = 1.0, portfolio_methods = ['equal_weight']):
-        df_portfolio = pd.concat(self.list_portfolio_rets_total, axis=1)
-        df_portfolio.dropna(axis=0, inplace=True)
+    @staticmethod
+    def get_portfolio_pnl(model_id: str, leverage: float = 1.0, portfolio_methods = ['equal_weight']):
+        df_portfolio = pd.read_parquet(f'/root/HappyQuantTest/happyquant/strategies/results/{model_id}/portfolio_rets.parquet')
         
-        chosen_columns = [i for i in df_portfolio.columns if i[10:] == chosen_model_id] # 10 为contract_name_ 的长度
+        chosen_columns = [i for i in df_portfolio.columns if i[10:] == model_id] # 10 为contract_name_ 的长度
         df_portfolio[chosen_columns] = df_portfolio[chosen_columns] * leverage
         plot_cum_rets(df_portfolio[chosen_columns])
 
@@ -108,7 +117,7 @@ class VectorBacktestEngine:
         for portfolio_method in portfolio_methods:
             if portfolio_method == 'equal_weight':
                 df_portfolio['portfolio_equal_weight'] = df_portfolio[chosen_columns].mean(axis=1) 
-    
+
             eval_label = f'portfolio_{portfolio_method}'
             evaluation = portfolio_evaluation(df_portfolio[eval_label], eval_label)
             list_evaluation.append(evaluation)
@@ -162,11 +171,11 @@ def get_portfolio_rets_from_weights(rets, weights):
     portfolio_rets = get_1D_array_from_series(rets) * weights
     return portfolio_rets
 
-def signal_evaluation(eval_label: str,
-                      signal: pd.Series,
+def signal_evaluation(signal: pd.Series,
                       df_tags: pd.DataFrame, 
                       trade_type: str, 
                       ):
+    eval_label = signal.name
     rets = df_tags['tag_raw'].loc[signal.index].fillna(0)
     weights = get_weights_from_signal(signal, trade_type)
     annualized_turnover = get_annualized_buy_side_turnover(weights)

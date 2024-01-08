@@ -14,13 +14,11 @@ class StockIndexStrategy(StrategyTemplate):
             params = yaml.safe_load(file)
         self.set_params(**params)
         
-    def run_backtest(self, 
-                     factor_names = ['TrendFollowing', 'TrendReverse'],
-                     contracts = ['000016.SH', '000300.SH', '000905.SH', '000852.SH'],
-                     chosen_model_id = 'OLSLRModel',
-                     leverage = 1.0,
-                     ):
+    def run_backtest(self, factor_names, contracts):
         params = self._params
         myvbe = VectorBacktestEngine(factor_names)
         myvbe.vector_backtest(contracts, **params)
-        myvbe.get_portfolio_pnl(chosen_model_id, leverage=leverage)
+
+    @staticmethod
+    def portfolio_backtest(model_id, leverage = 1.0):
+        VectorBacktestEngine.get_portfolio_pnl(model_id, leverage=leverage)

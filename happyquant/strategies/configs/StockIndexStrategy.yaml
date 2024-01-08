@@ -1,5 +1,6 @@
+result_dir: /root/HappyQuantTest/happyquant/strategies/results
 model_type: prediction_based
-model_name: RidgeLRModel
+model_name: OLSLRModel
 back_window: 3000
 target_type: tag_raw
 standardize_method: ts_z_score
@@ -7,4 +8,4 @@ single_test_method: ic
 combine_method: pca
 multi_test_method: StatsOLSLRModel
 trade_type: long_short
-model_id: RidgeLRModel
+model_id: OLSLRModel
