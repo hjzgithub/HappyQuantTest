@@ -43,15 +43,16 @@ def multi_factor_test(X, y, method):
     '''
     多因子测试
     '''
-    X_train, X_test = X[:-1, :], X[-1, :].reshape(1, -1)
-    y_train, y_test = y[:-1], y[-1] 
-    handler = Handler()
-    model_id, model = handler.new_model(model_name=method, model_id=f'{method}_fe')
-    handler.train_model(model_id, X_train, y_train)
-    if method == 'StatsOLSLRModel':
-        selected_indices = np.where(handler._models[model_id]._model.pvalues[1:] < 0.1)[0]
-        if len(selected_indices) > 0:
-            X = X[:, np.ix_(selected_indices)[0]]
+    if method:
+        X_train, X_test = X[:-1, :], X[-1, :].reshape(1, -1)
+        y_train, y_test = y[:-1], y[-1] 
+        handler = Handler()
+        model_id, model = handler.new_model(model_name=method, model_id=f'{method}_fe')
+        handler.train_model(model_id, X_train, y_train)
+        if method == 'StatsOLSLRModel':
+            selected_indices = np.where(handler._models[model_id]._model.pvalues[1:] < 0.1)[0]
+            if len(selected_indices) > 0:
+                X = X[:, np.ix_(selected_indices)[0]]
     return X
         
 def fixed_pca(x: np.ndarray, n_chosen: int = None, lower_bound: float = 0.9):

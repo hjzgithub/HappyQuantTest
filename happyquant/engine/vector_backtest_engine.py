@@ -13,8 +13,8 @@ class VectorBacktestEngine:
         if not (type(factor_names) == list):
             factor_names = [factor_names]
     
-    def init_tags_and_factors(self, data_path):
-
+    def init_tags_and_factors(self, contract_name):
+        data_path = f'{contract_name[:-3]}.parquet'
         path_type = 'local'
         store_path = '/root/HappyQuantTest/happyquant/raw_data/stock_index'
         
@@ -35,6 +35,7 @@ class VectorBacktestEngine:
         return df_tags, df_factors_total
 
     def vector_backtest(self, contracts, **params):
+        logger.info(params)
         if type(contracts) == str:
             contracts = [contracts]
 
@@ -44,10 +45,15 @@ class VectorBacktestEngine:
             list_evaluation = []
             list_portfolio_rets = []
 
-            # Construct the data path based on the contract name
-            data_path = f'{contract_name[:-3]}.parquet'
-            
-            df_tags, df_factors = self.init_tags_and_factors(data_path)
+            df_tags, df_factors = self.init_tags_and_factors(contract_name)
+
+            if params['model_id'].split('_')[0] == 'combo':
+                df_factors = pd.DataFrame()
+                for i in params['combo_model_id_list']:
+                    df = pd.read_parquet(f'/root/HappyQuantTest/happyquant/strategies/results/{i}/signals.parquet')
+                    df = df[[column for column in df.columns if column.split('_')[0] == contract_name]]
+                    df_factors = pd.concat([df_factors, df], axis=1)
+                df_tags = df_tags.loc[df_factors.index]
 
             # Benchmark
             rets = df_tags['tag_raw'].fillna(0)
@@ -147,7 +153,7 @@ def get_signal_from_factor(model_type: str,
     elif model_type == 'prediction_based':
         # 机器学习预测
         myme = ModelEngine()
-        df_preds = myme.rolling_run_models(model_name, model_id, df_factors, df_tags['tag_raw'], back_window, target_type, \
+        df_preds = myme.rolling_run_models(model_name, model_id, df_factors, df_tags, back_window, target_type, \
                                       standardize_method, single_test_method, combine_method, multi_test_method)
 
         if target_type == 'tag_raw':
@@ -155,7 +161,7 @@ def get_signal_from_factor(model_type: str,
         elif target_type == 'tag_ranked':
             signal = pd.Series(get_divided_by_single_bound(df_preds, 0.5).reshape(-1), index=df_preds.index)
         elif (target_type == 'tag_class') | (target_type == 'tag_multi_class'):
-            signal = df_preds.copy()             
+            signal = df_preds.copy()        
     return signal
     
 def get_weights_from_signal(signal: pd.Series, trade_type: str) -> np.ndarray:

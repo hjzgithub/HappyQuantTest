@@ -2,4 +2,5 @@
 /happyquant/raw_data
 /happyquant/factors
 /happyquant/factor_manager/factor_miner/*
+/happyquant/strategies/results
 **/__pycache__/

@@ -14,12 +14,11 @@ class ModelEngine:
         self.handler.train_model(model_id, X_train, y_train)
         return self.handler.evaluate_model(model_id, X_test, y_test)
 
-    def run_model(self, model_name, model_id, *args):
+    def run_model(self, model_name, model_id, *args) -> pd.Series:
         model_id, model = self.handler.new_model(model_name, model_id)
         X, y, t_index = get_data_split(*args)
         preds, rank_ic = self.get_model_train_and_test(model_id, X, y)
-        df_preds = pd.DataFrame(index=t_index)
-        df_preds['preds'] = preds
+        df_preds = pd.Series(preds, index=t_index)
         return df_preds
 
     def rolling_run_models(self, 
