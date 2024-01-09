@@ -1,3 +1,2 @@
-models_dir: /root/HappyQuantTest/happyquant/models
-model_configs_dir: /root/HappyQuantTest/happyquant/models/configs
-datasets_dir: /root/HappyQuantTest/happyquant/handlerML/datasets
+models_dir: /root/HappyQuantTest/happyquant/model_manager/models
+model_configs_dir: /root/HappyQuantTest/happyquant/model_manager/models/configs

@@ -25,14 +25,15 @@ class VectorBacktestEngine:
         df_tags.set_index('trade_date', inplace=True)
         df_tags.index = pd.to_datetime(df_tags.index, format='%Y%m%d')
 
-        df_factors_total = pd.DataFrame()
+        list_df_factors = []
         for factor_name in self.factor_names:
             myfe = FactorEngine(factor_name, data_path)
-            df_factors = myfe.load_factors()
-            df_factors.set_index('trade_date', inplace=True)
-            df_factors.index = pd.to_datetime(df_factors.index, format='%Y%m%d')
-            df_factors_total = pd.concat([df_factors_total, df_factors], axis=1)
-        return df_tags, df_factors_total
+            df = myfe.load_factors()
+            df.set_index('trade_date', inplace=True)
+            df.index = pd.to_datetime(df.index, format='%Y%m%d')
+            list_df_factors.append(df)
+        df_factors = pd.concat(list_df_factors, axis=1)
+        return df_tags, df_factors
 
     def vector_backtest(self, contracts, **params):
         logger.info(params)
@@ -48,11 +49,12 @@ class VectorBacktestEngine:
             df_tags, df_factors = self.init_tags_and_factors(contract_name)
 
             if params['model_id'].split('_')[0] == 'combo':
-                df_factors = pd.DataFrame()
+                list_df_factors = []
                 for i in params['combo_model_id_list']:
                     df = pd.read_parquet(f'/root/HappyQuantTest/happyquant/strategies/results/{i}/signals.parquet')
                     df = df[[column for column in df.columns if column.split('_')[0] == contract_name]]
-                    df_factors = pd.concat([df_factors, df], axis=1)
+                    list_df_factors.append(df)
+                df_factors = pd.concat(list_df_factors, axis=1)
                 df_tags = df_tags.loc[df_factors.index]
 
             # Benchmark
